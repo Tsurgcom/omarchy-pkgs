@@ -4,13 +4,13 @@
 # shellcheck shell=bash disable=SC2034,SC2154
 pkgname=cua-hyprland-plugin
 pkgver=0.47.8
-pkgrel=8
+pkgrel=9
 pkgdesc='Cua input candidate for reviewed profile omarchy-edge-20261111-abi'
 arch=('x86_64')
 url='https://github.com/trycua/cua'
 license=('MIT')
-# hyprland stays first and unversioned: the builder resolves Omarchy's own build, and package() pins it.
-# The ABI packages are Arch's to move and a pin on one stops the whole system update, so they are checked at load instead.
+# No versions: a pin on Hyprland or an ABI package stops the whole system update when that package moves.
+# The exact match is checked at load instead, from the versions the build measures into PROFILE.json.
 depends=('hyprland' 'aquamarine' 'glibc' 'hyprcursor' 'hyprgraphics' 'hyprlang' 'hyprutils' 'libgcc' 'libstdc++' 'libxkbcommon' 'wayland' 'python>=3.11' 'binutils')
 makedepends=('cmake>=3.30' 'ninja' 'pkgconf' 'gcc')
 options=('!strip' '!debug' '!lto')
@@ -90,11 +90,6 @@ check() {
 package() {
   check || return 1
   _verify --build "$srcdir/build" --output "$srcdir/BUILD-PROVENANCE.json" || return 1
-  # The module is compiled against one Hyprland build's headers, so it installs beside that build only.
-  # A newer Hyprland waits for this package's rebuild, which sync-rebuilds opens.
-  local built_against
-  built_against=$(pacman -Q hyprland) || return 1
-  depends=("hyprland=${built_against#* }" "${depends[@]:1}")
   install -Dm755 "$srcdir/build/cua-hyprland-plugin.so" \
     "$pkgdir/usr/lib/cua/hyprland/cua-hyprland-plugin.so" || return 1
   install -Dm644 "$srcdir/$_stem/LICENSE.md" \
